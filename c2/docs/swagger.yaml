@@ -1,0 +1,152 @@
+basePath: /
+host: localhost
+info:
+  contact:
+    email: info@kongroo.c2
+    name: "0x1337"
+  description: kongroo-c2 documentation for APIs
+  title: Kongroo-C2 APIs docs
+  version: "1.0"
+paths:
+  /agents/getall:
+    get:
+      consumes:
+      - application/json
+      description: This API can be used for getting a list of all agents
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for getting a list of all agents
+      tags:
+      - Agents
+  /reg/{agent}:
+    post:
+      consumes:
+      - application/json
+      description: This API can be used for registering a new agent
+      parameters:
+      - description: agent
+        in: query
+        name: agent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for registering a new agent
+      tags:
+      - Agent
+  /reg/{agent}/:
+    get:
+      consumes:
+      - application/json
+      description: This API can be used for getting agents specs
+      parameters:
+      - description: agent
+        in: query
+        name: agent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for getting agents specs
+      tags:
+      - Agent
+  /tasks/{agent}:
+    get:
+      consumes:
+      - application/json
+      description: This API can be used for getting task for ana gent
+      parameters:
+      - description: agent
+        in: query
+        name: agent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for getting task for an agent
+      tags:
+      - Task
+    post:
+      consumes:
+      - application/json
+      description: This API can be used for sending output of previously executed
+        command
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for sending output of previously executed command
+      tags:
+      - Task
+  /tasks/{agent}/{task}:
+    post:
+      consumes:
+      - application/json
+      description: This API can be used for creating a new task for ana gent
+      parameters:
+      - description: agent in charge to run command
+        in: query
+        name: agent
+        required: true
+        type: string
+      - description: base64 command
+        in: query
+        name: task
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for creating a new task for ana gent
+      tags:
+      - Task
+  /tasks/{agent}/history:
+    get:
+      consumes:
+      - application/json
+      description: This API can be used for getting history for a specific agent
+      parameters:
+      - description: agent
+        in: query
+        name: agent
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: api response
+          schema:
+            type: string
+      summary: This API can be used for getting history for a specific agent
+      tags:
+      - Task
+      - Agent
+swagger: "2.0"

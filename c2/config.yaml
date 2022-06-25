@@ -1,0 +1,15 @@
+---
+  mongo:
+    server:     "mongodb://mongodb:27017"
+    host:       "localhost"
+    port:       27017
+    database:   "kongroo-c2"
+    user:       "kongroo"
+    psw:        ""
+  redis:
+    host:     "localhost"
+    port:     "6379"
+    password: ""
+  c2:
+    address: 0.0.0.0
+    port: ":8080"
