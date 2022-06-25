@@ -11,6 +11,7 @@ Quick info on folders:
 
 - /web: web interface to interact with agents and eventually generate payloads
 
+The project is being currently developed on gitlab gitlab.com/mgdi/kongroo-c2
 
 ## Test C2
 `docker run --name mongodb -d -p 27017:27017 mongo`
