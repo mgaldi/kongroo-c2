@@ -4,7 +4,7 @@ def xor(data):
     return bytearray((data[i] ^ ord("K") for i in range(0, len(data))))
 
 config = {}
-config['Hostname'] = '127.0.0.1'
+config['Hostname'] = '192.168.8.197'
 config['Migrate'] = ''
 config = json.dumps(config).encode()
 padding = b"\x00" * (2048 - len(config))

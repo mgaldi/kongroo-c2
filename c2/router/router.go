@@ -52,7 +52,7 @@ func Run() {
 
 	r.Route("/reg/{agent}", func(r chi.Router) {
 		r.Use(agentCtx)
-		// Get info about agent
+		// Get info about agent //TODO Remove GET
 		r.Get("/", handlers.GetAgent)
 		// Create a new agent
 		r.Post("/", handlers.CreateAgent)
@@ -66,8 +66,6 @@ func Run() {
 	r.Route("/tasks/{agent}", func(r chi.Router) {
 		r.Use(taskCtx)
 		r.Get("/", handlers.GetTask)
-
-		// to construct a posttaskresult request you have to provide base64(command)+base64(giannino)+base64(output)
 		r.Post("/", handlers.PostTaskResult)
 
 	})
@@ -157,23 +155,24 @@ func createTaskCtx(next http.Handler) http.Handler {
 
 func agentCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		agentName := chi.URLParam(r, "agent")
+		agentID := chi.URLParam(r, "agent")
 		var ctx context.Context
 
 		if r.Method == "POST" {
 			// Check if agent is alreagy registered
-			_, err := mongo.MongoCl.GetAgent(agentName)
+			_, err := mongo.MongoCl.GetAgent(agentID)
 			if err == nil {
 				helpers.WriteResponse(w, 1, errors.New("Agent is already registered"))
 				return
 			}
 			// Insert agentName inside context
-			ctx = context.WithValue(r.Context(), "id", agentName)
+			ctx = context.WithValue(r.Context(), "id", agentID)
 		}
 
+		//TODO Change GET to return 500 or 404
 		if r.Method == "GET" {
 			// Check if agent is alreagy registered
-			agent, err := mongo.MongoCl.GetAgent(agentName)
+			agent, err := mongo.MongoCl.GetAgent(agentID)
 			if err != nil {
 				helpers.WriteResponse(w, 1, err)
 				return
@@ -187,7 +186,7 @@ func agentCtx(next http.Handler) http.Handler {
 }
 
 func existCheck(agent string, w http.ResponseWriter) bool {
-	if _, err := mongo.MongoCl.GetAgent(agent); err != nil {
+	if err := mongo.MongoCl.IsAgent(agent); err != nil {
 		return false
 	}
 	return true
