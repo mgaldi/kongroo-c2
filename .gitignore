@@ -1,0 +1,8 @@
+web/node_modules
+web/package-lock.json
+web/yarn.lock
+go.sum
+c2/go.sum
+c2/config.yaml
+agent/main/main
+agent/main/main.exe
