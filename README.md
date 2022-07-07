@@ -1,3 +1,7 @@
+# Notes
+
+This repo doesn't follow the main development, and it's here only because I'm looking for jobs it's listed in the CV. This repo has only some basic functionalities but if you want to contribute on the private repo or wish to participate in any way, get in contact with me. 
+
 # KONGROO C2
 
 This project is a personal exercise to get a more in-depth understanding of a C2 and the various ways implants work and interact with it.
